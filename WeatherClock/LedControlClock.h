@@ -142,6 +142,7 @@ public:
   void displayHours(uint8_t p_hours);
   void displayTemperature(uint8_t p_temperature);
   void displayHumidity(uint8_t p_humidity);
+  void setBrightness(uint8_t p_brightness);
 };
 
 #endif

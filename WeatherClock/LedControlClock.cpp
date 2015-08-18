@@ -4,8 +4,8 @@ LedControlClock::LedControlClock(uint8_t p_dataPin, uint8_t p_clkPin, uint8_t p_
   LedControl(p_dataPin, p_clkPin, p_csPin, p_numDevices) {
     shutdown(0,false);    // wakes up displays
     shutdown(1,false);
-    setIntensity(0,2);   // sets intensity levels
-    setIntensity(1,2);
+    setIntensity(0,1);    // sets intensity levels
+    setIntensity(1,1);
     clearDisplay(0);      // clears displays
     clearDisplay(1);}
 
@@ -61,4 +61,12 @@ void LedControlClock::displayHumidity(uint8_t p_humidity) {
     setRow(0, i, mask);
     setRow(1, i, pourcent[i]);
   }
+}
+
+void LedControlClock::setBrightness(uint8_t p_brightness) {
+  if (p_brightness < 1 || p_brightness > 15)
+    return;
+
+  setIntensity(0,p_brightness);
+  setIntensity(1,p_brightness);
 }
