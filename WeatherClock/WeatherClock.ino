@@ -54,57 +54,114 @@ DHT g_dht(DHTPIN, DHTTYPE);
 Encoder g_enc(2, 3);
 button g_button(4); 
 
-
 long g_encoderPosition = 0;
 
 uint8_t g_hours = 0;
 uint8_t g_minutes = 0;
 
+uint8_t g_brightnessLevel = 1;
+
+// state-machine;
+enum states {
+  STATE_NO_ACTION,
+  STATE_TEMP_HUM,
+  STATE_BRIGHTNESS,
+  NB_OF_STATES
+};
+
+uint8_t g_currentState = 0; // no action
+long g_lastAction = 0; // millis() of last action
+const uint8_t TIME_OUT = 3000; // timeout
+bool g_menuDisplayed = false;
+
 void setup() {
-  TraceInfo(F("The WeatherClock is starting..."));
   Serial.begin(9600);  
   g_dht.begin();
+
+  setSyncProvider(RTC.get); 
+  if (timeStatus() != timeSet) {
+    TraceInfo(F("Unable to sync with the DS1307\n"));
+  } else {
+    TraceInfoFormat(F("Time set to : %u:%u\n"), hour(), minute());
+  }
 
   // attaches the functions called on one or double-click
   g_button.attach_fnct_on_click(one_click);
   g_button.attach_fnct_on_double_click(double_click);
+
+  g_lcc.setBrightness(g_brightnessLevel);
 }
 
 void loop() {
-  tmElements_t tm;
-  if (RTC.read(tm)) {
-    if (tm.Minute != g_minutes || tm.Hour != g_hours) {
-      g_minutes = tm.Minute;
-      g_hours = tm.Hour;
-      g_lcc.displayHours(g_hours);
-      g_lcc.displayMinutes(g_minutes);
-      TraceInfoFormat(F("Time: %u:%u\n"), g_hours, g_minutes);
+  // updates the clock if necessary
+  if (timeStatus() == timeSet) {
+    if (hour() != g_hours || minute() != g_minutes) {
+      g_hours = hour();
+      g_minutes = minute();
+      displayTime();
     }
-  } else {
-    TraceError(F("ERROR: The DS1307 is stopped or is not working"));
   }
-  long newPosition = g_enc.read();
+  /*long newPosition = g_enc.read();
   if (newPosition != g_encoderPosition) {
     g_encoderPosition = newPosition;
     TraceInfoFormat(F("Position: %u\n"), g_encoderPosition);
-  }
+  }*/
   g_button.tick();
+
+  // reads the photoresistor
+  /*
+  uint16_t photoresistorValue = analogRead(A1);    
+  TraceInfoFormat(F("Photoresistor: %u\n"), photoresistorValue);
+  delay(100);
+  */
 }
 
 // function called on one-click
 void one_click() {
-  float h = g_dht.readHumidity();
-  g_lcc.displayHumidity(h);
-  delay(1500);
-  float t = g_dht.readTemperature();
-  g_lcc.displayTemperature(t);
-  delay(1500);
-  g_lcc.displayHours(g_hours);
-  g_lcc.displayMinutes(g_minutes);
+  // on a single click --> display temp & hum
+  if (g_menuDisplayed == false) 
+    g_currentState = STATE_TEMP_HUM;
+
+  switch (g_currentState) {
+    // displays humidity & temperature
+    case STATE_TEMP_HUM:
+      float h = g_dht.readHumidity();
+      g_lcc.displayHumidity(h);
+      delay(1500);
+      float t = g_dht.readTemperature();
+      g_lcc.displayTemperature(t);
+      delay(1500);
+      displayTime();
+      break;
+
+    //default:
+  }
   TraceInfo(F("Button: One-click\n"));
 }
 
 // function called on double-click
 void double_click() {
   TraceInfo(F("Button: Double-click\n"));
+  g_menuDisplayed = true;
+  while (g_menuDisplayed == true || (millis() - g_lastAction) < TIME_OUT) {
+    long newPosition = g_enc.read();
+    if (newPosition != g_encoderPosition) {
+      if (newPosition > g_encoderPosition)
+        g_currentState = (g_currentState + 1) % NB_OF_STATES;
+      else
+        if (g_currentState > 0)
+          g_currentState--;
+        else 
+          g_currentState = NB_OF_STATES - 1;
+      g_encoderPosition = newPosition;
+      g_lastAction = millis();
+      TraceInfoFormat(F("State: %u\n"), g_currentState);
+    }
+    g_button.tick();
+  }
+}
+
+void displayTime(void) {
+  g_lcc.displayHours(g_hours);
+  g_lcc.displayMinutes(g_minutes);
 }

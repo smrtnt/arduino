@@ -30,7 +30,7 @@
 
 button::button(uint8_t p_button_pin):
   m_button_pin(p_button_pin),
-  m_click_ticks(800),
+  m_click_ticks(1000),
   m_state(0),
   m_button_level(HIGH) {
     // sets the pin as INPUT
