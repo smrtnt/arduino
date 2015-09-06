@@ -11,3 +11,5 @@
 ### ToDo
 - Interactive menu (with the encoder)
 - Alarm
+
+![Weather Clock](WeatherClock.jpg)
