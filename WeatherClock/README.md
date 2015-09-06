@@ -1,12 +1,13 @@
-# WeatherClock (IN PROGRESS)
-A simple clock with temperature and humidity indications
+# WeatherClock
+## A simple clock with temperature & humidity indications and plant monitoring
 
-## Material
+### Material
 - 1x Arduino
 - 1x DHT11
+- 1x DS1307
 - 2x LED matrices
+- 1x Moisture sensor
 
-## Libraries
-- DS1302: https://github.com/msparks/arduino-ds1302/tree/master/examples
-- DHT: https://github.com/adafruit/DHT-sensor-library
-- LedControl: https://github.com/wayoda/LedControl
+### ToDo
+- Interactive menu (with the encoder)
+- Alarm
